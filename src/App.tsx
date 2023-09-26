@@ -7,19 +7,22 @@ import Main from "./components/main";
 import {DataProvider} from "./contexts/Data";
 import appTheme from "./theme";
 import {ToastProvider} from "./contexts/Toast";
+import {BrowserRouter} from "react-router-dom";
 
 function App() {
     return (
         <ThemeProvider theme={appTheme}>
             <ToastProvider>
                 <DataProvider>
-                    <CssBaseline/>
+                    <BrowserRouter>
+                        <CssBaseline/>
 
-                    <Header/>
+                        <Header/>
 
-                    <Main/>
+                        <Main/>
 
-                    <Footer/>
+                        <Footer/>
+                    </BrowserRouter>
                 </DataProvider>
             </ToastProvider>
         </ThemeProvider>

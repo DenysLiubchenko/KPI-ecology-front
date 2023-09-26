@@ -11,16 +11,16 @@ import {
     TableHead,
     TablePagination,
     TableRow,
-    TableSortLabel,
+    TableSortLabel, TextField,
     Toolbar,
     Tooltip,
     Typography
 } from "@mui/material";
 import {FC, useContext, useMemo, useState} from "react";
-import {Delete, FilterList, Refresh} from "@mui/icons-material";
+import {Add, Close, Delete, Done, Edit, FilterList, Refresh} from "@mui/icons-material";
 import DataContext from "../../contexts/Data";
 import Pollution from "../../models/pollution";
-import {deletePollution, fetchPollution} from "../../api";
+import {addPollution, deletePollution, fetchPollution} from "../../api";
 import {useToast} from "../../hooks/useToast";
 import ToastContext from "../../contexts/Toast";
 
@@ -48,68 +48,61 @@ function getComparator<Key extends keyof any>(
         : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-interface HeadCell {
-    disablePadding: boolean;
+export interface HeadCell {
     id: keyof Row;
     label: string;
     numeric: boolean;
+    select?: string[] | number[];
 }
 
-const headCells: readonly HeadCell[] = [
-    {
-        id: "companyName",
-        numeric: false,
-        disablePadding: true,
-        label: "Підприємство",
-    },
-    {
-        id: "location",
-        numeric: false,
-        disablePadding: false,
-        label: "Розташування",
-    },
-    {
-        id: "pollutant",
-        numeric: false,
-        disablePadding: false,
-        label: "Забрудник",
-    },
-    {
-        id: "mfr",
-        numeric: true,
-        disablePadding: false,
-        label: "Масові витрати (г/год.)",
-    },
-    {
-        id: "tlv",
-        numeric: true,
-        disablePadding: false,
-        label: "ГДВ (мг/м³)",
-    },
-    {
-        id: "pollutionValue",
-        numeric: true,
-        disablePadding: false,
-        label: "Викиди (т/рік)",
-    },
-    {
-        id: "year",
-        numeric: true,
-        disablePadding: false,
-        label: "Рік",
-    },
-];
+// const headCells: readonly HeadCell[] = [
+//     {
+//         id: "companyName",
+//         numeric: false,
+//         label: "Підприємство",
+//     },
+//     {
+//         id: "location",
+//         numeric: false,
+//         label: "Розташування",
+//     },
+//     {
+//         id: "pollutant",
+//         numeric: false,
+//         label: "Забрудник",
+//     },
+//     {
+//         id: "mfr",
+//         numeric: true,
+//         label: "Масові витрати (г/год.)",
+//     },
+//     {
+//         id: "tlv",
+//         numeric: true,
+//         label: "ГДВ (мг/м³)",
+//     },
+//     {
+//         id: "pollutionValue",
+//         numeric: true,
+//         label: "Викиди (т/рік)",
+//     },
+//     {
+//         id: "year",
+//         numeric: true,
+//         label: "Рік",
+//     },
+// ];
 
-type Row = {
-    id: number,
-    companyName: string,
-    location: string,
-    pollutant: string,
-    mfr: number,
-    tlv: number,
-    pollutionValue: number,
-    year: number
-}
+// type Row = {
+//     id: number,
+//     companyName: string,
+//     location: string,
+//     pollutant: string,
+//     mfr: number,
+//     tlv: number,
+//     pollutionValue: number,
+//     year: number
+// }
 
 function dataToRows(data: Pollution[]): Row[] {
     return data.map<Row>(e => ({
@@ -131,11 +124,10 @@ interface EnhancedTableProps {
     order: Order;
     orderBy: string;
     rowCount: number;
+    headCells: HeadCell[];
 }
 
-function EnhancedTableHead(props: EnhancedTableProps) {
-    const { onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort } =
-        props;
+function EnhancedTableHead({ onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort, headCells }: EnhancedTableProps) {
     const createSortHandler =
         (property: keyof Row) => (event: React.MouseEvent<unknown>) => {
             onRequestSort(event, property);
@@ -145,21 +137,22 @@ function EnhancedTableHead(props: EnhancedTableProps) {
         <TableHead>
             <TableRow>
                 <TableCell padding="checkbox">
-                    <Checkbox
-                        color="primary"
-                        indeterminate={numSelected > 0 && numSelected < rowCount}
-                        checked={rowCount > 0 && numSelected === rowCount}
-                        onChange={onSelectAllClick}
-                        inputProps={{
-                            'aria-label': 'select all desserts',
-                        }}
-                    />
+                    <IconButton>
+                        <Checkbox
+                            color="primary"
+                            indeterminate={numSelected > 0 && numSelected < rowCount}
+                            checked={rowCount > 0 && numSelected === rowCount}
+                            onChange={onSelectAllClick}
+                            inputProps={{
+                                'aria-label': 'select all',
+                            }}
+                        />
+                    </IconButton>
                 </TableCell>
                 {headCells.map((headCell) => (
                     <TableCell
                         key={headCell.id}
                         align={headCell.numeric ? 'right' : 'left'}
-                        padding={headCell.disablePadding ? 'none' : 'normal'}
                         sortDirection={orderBy === headCell.id ? order : false}
                     >
                         <TableSortLabel
@@ -184,21 +177,12 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 interface EnhancedTableToolbarProps {
     numSelected: number;
     handleDelete: () => unknown;
+    handleAddRow: () => unknown;
+    handleRefresh: () => unknown;
+    title: string;
 }
 
-function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-    const { numSelected, handleDelete } = props;
-    const {setData} = useContext(DataContext);
-    const {setToast} = useContext(ToastContext);
-
-    const handleRefresh = async () => {
-        try {
-            setData(await fetchPollution());
-        } catch {
-            setToast({title: "Не вдалось завантажити дані.", variant: "error"});
-        }
-    }
-
+function EnhancedTableToolbar({numSelected, handleDelete, handleAddRow, title, handleRefresh}: EnhancedTableToolbarProps) {
     return (
         <Toolbar
             sx={{
@@ -226,7 +210,7 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
                     id="tableTitle"
                     component="div"
                 >
-                    Викиди
+                    {title}
                 </Typography>
             )}
             {numSelected > 0 ? (
@@ -237,6 +221,11 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
                 </Tooltip>
             ) : (
                 <>
+                    <Tooltip title="Додати поле">
+                        <IconButton onClick={handleAddRow}>
+                            <Add/>
+                        </IconButton>
+                    </Tooltip>
                     <Tooltip title="Оновити">
                         <IconButton onClick={handleRefresh}>
                             <Refresh />
@@ -253,19 +242,27 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
     );
 }
 
+export type Row = {
+    id: number,
+    [key: string]: string | number
+};
 
-const Table: FC = () => {
+export interface TableProps {
+    title: string;
+    handleRefresh: () => unknown;
+    handleDelete: (selected: number[]) => unknown;
+    handleAddRow: () => unknown;
+    rows: Row[];
+    headCells: HeadCell[]
+}
+
+const Table: FC<TableProps> = ({title, handleRefresh, handleDelete, handleAddRow, rows, headCells}) => {
     const [order, setOrder] = useState<Order>('asc');
-    const [orderBy, setOrderBy] = useState<keyof Row>("companyName");
+    const [orderBy, setOrderBy] = useState<keyof Row>("id");
     const [selected, setSelected] = useState<readonly number[]>([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const {data, setData} = useContext(DataContext);
-    const {setToast} = useToast();
-
-    const rows = useMemo(() => {
-        return dataToRows(data);
-    }, [data]);
+    const [newRow, setNewRow] = useState<Omit<Row, "id"> | undefined>(undefined);
 
     const handleRequestSort = (
         event: React.MouseEvent<unknown>,
@@ -314,22 +311,6 @@ const Table: FC = () => {
         setPage(0);
     };
 
-    const handleDelete = async () => {
-        try {
-            await deletePollution(selected as number[]);
-        } catch {
-            setToast({title: "Не вдалось видалити рядок.", variant: "error"})
-        }
-
-        try {
-            setData(await fetchPollution());
-        } catch {
-            setToast({title: "Не вдалось завантажити дані.", variant: "error"});
-        }
-
-        setSelected([]);
-    }
-
     const isSelected = (id: number) => selected.indexOf(id) !== -1;
 
     // Avoid a layout jump when reaching the last page with empty rows.
@@ -342,13 +323,19 @@ const Table: FC = () => {
                 page * rowsPerPage,
                 page * rowsPerPage + rowsPerPage,
             ),
-        [order, orderBy, page, rowsPerPage, data],
+        [order, orderBy, page, rowsPerPage, rows],
     );
 
     return (
         <Box sx={{ width: '100%' }}>
             <Paper sx={{ width: '100%', mb: 2 }}>
-                <EnhancedTableToolbar numSelected={selected.length} handleDelete={handleDelete}/>
+                <EnhancedTableToolbar
+                    numSelected={selected.length}
+                    handleDelete={() => {handleDelete(selected as number[]); setSelected([])}}
+                    handleAddRow={handleAddRow}
+                    handleRefresh={handleRefresh}
+                    title={title}
+                />
                 <TableContainer>
                     <MUITable
                         sx={{ minWidth: 750 }}
@@ -358,10 +345,11 @@ const Table: FC = () => {
                         <EnhancedTableHead
                             numSelected={selected.length}
                             order={order}
-                            orderBy={orderBy}
+                            orderBy={orderBy as string}
                             onSelectAllClick={handleSelectAllClick}
                             onRequestSort={handleRequestSort}
                             rowCount={rows.length}
+                            headCells={headCells}
                         />
                         <TableBody>
                             {visibleRows.map((row, index) => {
@@ -380,21 +368,24 @@ const Table: FC = () => {
                                         sx={{ cursor: 'pointer' }}
                                     >
                                         <TableCell padding="checkbox">
-                                            <Checkbox
-                                                color="primary"
-                                                checked={isItemSelected}
-                                                inputProps={{
-                                                    'aria-labelledby': labelId,
-                                                }}
-                                            />
+                                            <Box display={"flex"}>
+                                                <IconButton>
+                                                    <Checkbox sx={{padding: 0}}
+                                                              color="primary"
+                                                              checked={isItemSelected}
+                                                              inputProps={{
+                                                                  'aria-labelledby': labelId,
+                                                              }}
+                                                    />
+                                                </IconButton>
+                                                <IconButton>
+                                                    <Edit/>
+                                                </IconButton>
+                                            </Box>
                                         </TableCell>
-                                        <TableCell component="th" id={labelId} scope="row">{row.companyName}</TableCell>
-                                        <TableCell align="right">{row.location}</TableCell>
-                                        <TableCell align="right">{row.pollutant}</TableCell>
-                                        <TableCell align="right">{row.mfr}</TableCell>
-                                        <TableCell align="right">{row.tlv}</TableCell>
-                                        <TableCell align="right">{row.pollutionValue}</TableCell>
-                                        <TableCell align="right">{row.year}</TableCell>
+                                        {headCells.map(e => {
+                                            return <TableCell align="right">{row[e.id]}</TableCell>
+                                        })}
                                     </TableRow>
                                 );
                             })}

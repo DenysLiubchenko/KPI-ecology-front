@@ -6,16 +6,26 @@ import {
     IconButton, LinearProgress, MenuItem,
     MenuList,
     Paper,
-    Popper,
+    Popper, Tab, Tabs,
     Toolbar, Tooltip,
     Typography
 } from "@mui/material";
 import {Spa, Upload} from "@mui/icons-material";
-import {SyntheticEvent, useContext, useRef, useState} from "react";
-import {fetchPollution, uploadCsvCompanies, uploadCsvPollutants, uploadCsvPollutions} from "../../api";
+import {SyntheticEvent, useContext, useEffect, useRef, useState} from "react";
+import {
+    fetchCompany,
+    fetchPollutant,
+    fetchPollution,
+    uploadCsvCompanies,
+    uploadCsvPollutants,
+    uploadCsvPollutions
+} from "../../api";
 import {AxiosProgressEvent} from "axios";
 import DataContext from "../../contexts/Data";
 import {useToast} from "../../hooks/useToast";
+import {useLocation, useNavigate} from "react-router-dom";
+
+const tabs = ["pollutions", "companies", "pollutants"];
 
 const Header = () => {
     const [open, setOpen] = useState(false);
@@ -25,6 +35,10 @@ const Header = () => {
     const [progress, setProgress] = useState<number | undefined>(undefined);
     const {setData} = useContext(DataContext);
     const {setToast} = useToast();
+    const location = useLocation();
+    const navigate = useNavigate();
+    let tabIndex = tabs.indexOf(location.pathname.replace("/", "").split("/")[0]);
+    if (tabIndex === -1) tabIndex = 0;
 
     const handleToggleUpload = () => {
         setOpen(!open);
@@ -69,18 +83,32 @@ const Header = () => {
                 });
             });
 
-            setData(await fetchPollution().catch(e => {
-                setToast({
-                    title: "Помилка при завантаженні файлу!",
+            const pollutions = await fetchPollution()
+                .catch(() => setToast({
+                    title: "Не вдалось завантажити дані.\nПеревірте підключення.",
                     variant: "error"
-                });
-            }));
+                }));
+            const pollutants = await fetchPollutant()
+                .catch(() => setToast({
+                    title: "Не вдалось завантажити дані.\nПеревірте підключення.",
+                    variant: "error"
+                }));
+            const companies = await fetchCompany()
+                .catch(() => setToast({
+                    title: "Не вдалось завантажити дані.\nПеревірте підключення.",
+                    variant: "error"
+                }));
+            setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || []})
 
             setProgress(0);
 
             setChangeFileCb(() => {});
             inputRef.current!.value = "";
         });
+    }
+
+    const handleTabChange = (e: SyntheticEvent, newTab: number) => {
+        navigate("/" + tabs[newTab]);
     }
 
     return (
@@ -120,6 +148,12 @@ const Header = () => {
                         </Popper>
                     </Box>
                 </Toolbar>
+
+                <Tabs textColor={"inherit"} value={tabIndex} onChange={handleTabChange}>
+                    <Tab label="Забруднення"/>
+                    <Tab label="Компанії"/>
+                    <Tab label="Забрудники"/>
+                </Tabs>
             </Container>
             {typeof progress !== "undefined" &&
                 <Fade in={true}><LinearProgress variant={"determinate"} value={progress * 100}
