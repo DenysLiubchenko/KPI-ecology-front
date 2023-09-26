@@ -85,7 +85,7 @@ const Header = () => {
 
     return (
         <AppBar position={"relative"} id={"header"}>
-            <Container maxWidth={"md"}>
+            <Container maxWidth={"lg"}>
                 <Toolbar sx={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
                     <Box className={"logo"} sx={{display: "flex", alignItems: "center"}}>
                         <Spa sx={{marginRight: 2}}/>

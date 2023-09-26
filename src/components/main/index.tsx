@@ -18,7 +18,7 @@ const Main = () => {
     }, [])
 
     return (
-        <Container maxWidth={"md"} sx={{display: "flex", flexDirection: "column", alignItems: "center", my: 3}} component={"main"}>
+        <Container maxWidth={"lg"} sx={{display: "flex", flexDirection: "column", alignItems: "center", my: 3}} component={"main"}>
             <Table/>
         </Container>
     )
