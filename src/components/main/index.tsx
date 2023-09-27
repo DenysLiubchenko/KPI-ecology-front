@@ -41,7 +41,7 @@ const Main = () => {
                 <Route path={"/companies"} element={<CompaniesTable/>}/>
                 <Route path={"/pollutants"} element={<PollutantsTable/>}/>
                 <Route path={"/pollutions"} element={<PollutionsTable/>}/>
-                <Route path={"/"} element={"s"}/>
+                <Route path={"/"} element={<PollutionsTable/>}/>
                 <Route path={"*"} element={<Navigate to={"/"}/>}/>
             </Routes>
         </Container>

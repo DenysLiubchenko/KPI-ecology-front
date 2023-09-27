@@ -55,55 +55,6 @@ export interface HeadCell {
     select?: string[] | number[];
 }
 
-// const headCells: readonly HeadCell[] = [
-//     {
-//         id: "companyName",
-//         numeric: false,
-//         label: "Підприємство",
-//     },
-//     {
-//         id: "location",
-//         numeric: false,
-//         label: "Розташування",
-//     },
-//     {
-//         id: "pollutant",
-//         numeric: false,
-//         label: "Забрудник",
-//     },
-//     {
-//         id: "mfr",
-//         numeric: true,
-//         label: "Масові витрати (г/год.)",
-//     },
-//     {
-//         id: "tlv",
-//         numeric: true,
-//         label: "ГДВ (мг/м³)",
-//     },
-//     {
-//         id: "pollutionValue",
-//         numeric: true,
-//         label: "Викиди (т/рік)",
-//     },
-//     {
-//         id: "year",
-//         numeric: true,
-//         label: "Рік",
-//     },
-// ];
-
-// type Row = {
-//     id: number,
-//     companyName: string,
-//     location: string,
-//     pollutant: string,
-//     mfr: number,
-//     tlv: number,
-//     pollutionValue: number,
-//     year: number
-// }
-
 function dataToRows(data: Pollution[]): Row[] {
     return data.map<Row>(e => ({
         id: e.id,
