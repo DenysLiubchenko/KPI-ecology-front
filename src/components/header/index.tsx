@@ -177,8 +177,6 @@ const Header = () => {
                         <Box>
                             <Tooltip title={"Експорт"}>
                                 <IconButton ref={downloadAnchorRef} onClick={handleToggleDownload}>
-                                    <input type="file" hidden name={"file"} ref={inputRef} accept={".csv"}
-                                           onChange={changeFileCb}/>
                                     <Download sx={{color: "primary.contrastText"}}/>
                                 </IconButton>
                             </Tooltip>
