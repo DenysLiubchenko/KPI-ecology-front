@@ -24,7 +24,7 @@ const headCells: HeadCell<Row>[] = [
     {
         id: "mfr",
         numeric: true,
-        label: "Масові витрати (г/год.)",
+        label: "Масові витрати (г/год)",
     },
     {
         id: "tlv",
@@ -34,7 +34,7 @@ const headCells: HeadCell<Row>[] = [
     {
         id: "elv",
         numeric: true,
-        label: "ГДВ (г/год.)"
+        label: "ГДВ (г/год)"
     },
     {
         id: "addLadd",
@@ -44,12 +44,12 @@ const headCells: HeadCell<Row>[] = [
     {
         id: "pollutionConcentration",
         numeric: true,
-        label: "Концентрація"
+        label: "Концентрація (мг/м³)"
     },
     {
         id: "pollutionValue",
         numeric: true,
-        label: "Викиди (т/рік)",
+        label: "Викиди (г/год)",
     },
     {
         id: "year",
