@@ -10,9 +10,11 @@ import {
     Toolbar, Tooltip,
     Typography
 } from "@mui/material";
-import {Spa, Upload} from "@mui/icons-material";
+import {Download, Spa, Upload} from "@mui/icons-material";
 import {SyntheticEvent, useContext, useEffect, useRef, useState} from "react";
 import {
+    downloadCompanies,
+    downloadPollutants, downloadPollutions,
     fetchCompany,
     fetchPollutant,
     fetchPollution,
@@ -28,8 +30,10 @@ import {useLocation, useNavigate} from "react-router-dom";
 const tabs = ["pollutions", "companies", "pollutants"];
 
 const Header = () => {
-    const [open, setOpen] = useState(false);
-    const anchorRef = useRef<HTMLButtonElement>(null);
+    const [openUpload, setOpenUpload] = useState(false);
+    const [openDownload, setOpenDownload] = useState(false);
+    const uploadAnchorRef = useRef<HTMLButtonElement>(null);
+    const downloadAnchorRef = useRef<HTMLButtonElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const [changeFileCb, setChangeFileCb] = useState<() => void>(() => {});
     const [progress, setProgress] = useState<number | undefined>(undefined);
@@ -41,15 +45,27 @@ const Header = () => {
     if (tabIndex === -1) tabIndex = 0;
 
     const handleToggleUpload = () => {
-        setOpen(!open);
+        setOpenUpload(!openUpload);
     }
 
-    const handleClose = (event: Event | SyntheticEvent) => {
-        if (anchorRef.current && anchorRef.current.contains(event.target as HTMLElement)) {
+    const handleToggleDownload = () => {
+        setOpenDownload(!openDownload);
+    }
+
+    const handleCloseUpload = (event: Event | SyntheticEvent) => {
+        if (uploadAnchorRef.current && uploadAnchorRef.current.contains(event.target as HTMLElement)) {
             return;
         }
 
-        setOpen(false);
+        setOpenUpload(false);
+    };
+
+    const handleCloseDownload = (event: Event | SyntheticEvent) => {
+        if (downloadAnchorRef.current && downloadAnchorRef.current.contains(event.target as HTMLElement)) {
+            return;
+        }
+
+        setOpenDownload(false);
     };
 
     const handleUploadCompanies = () => {
@@ -66,45 +82,54 @@ const Header = () => {
 
     const handleUpload = (uploadCb: (file: File, onProgress?: (progress: AxiosProgressEvent) => void) => Promise<unknown>) => {
 
-        setOpen(false);
+        setOpenUpload(false);
 
         inputRef.current!.click();
 
         setChangeFileCb(() => async () => {
-            await uploadCb(inputRef.current!.files!.item(0)!, progress => {
-                if (progress.progress == 1)
-                    setTimeout(() => setProgress(undefined), 500);
-                setProgress(progress.progress);
-            }).catch(e => {
+            setProgress(0);
+
+            try {
+                await uploadCb(inputRef.current!.files!.item(0)!, e => {
+                    if (e.progress == 1)
+                        setTimeout(() => setProgress(undefined), 500);
+                    setProgress(e.progress);
+                });
+            } catch (e) {
                 setProgress(undefined);
                 setToast({
                     title: "Помилка при завантаженні файлу!",
                     variant: "error"
                 });
-            });
+            }
 
-            const pollutions = await fetchPollution()
-                .catch(() => setToast({
+            try {
+                const pollutions = await fetchPollution();
+                const pollutants = await fetchPollutant();
+                const companies = await fetchCompany();
+                setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || []})
+            } catch (e) {
+                setToast({
                     title: "Не вдалось завантажити дані.\nПеревірте підключення.",
                     variant: "error"
-                }));
-            const pollutants = await fetchPollutant()
-                .catch(() => setToast({
-                    title: "Не вдалось завантажити дані.\nПеревірте підключення.",
-                    variant: "error"
-                }));
-            const companies = await fetchCompany()
-                .catch(() => setToast({
-                    title: "Не вдалось завантажити дані.\nПеревірте підключення.",
-                    variant: "error"
-                }));
-            setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || []})
-
-            setProgress(0);
+                });
+            }
 
             setChangeFileCb(() => {});
             inputRef.current!.value = "";
         });
+    }
+
+    const handleDownloadCompanies = () => {
+        downloadCompanies();
+    }
+
+    const handleDownloadPollutants = () => {
+        downloadPollutants();
+    }
+
+    const handleDownloadPollutions = () => {
+        downloadPollutions();
     }
 
     const handleTabChange = (e: SyntheticEvent, newTab: number) => {
@@ -123,29 +148,57 @@ const Header = () => {
                     </Box>
 
                     <Box className={"actions"} sx={{display: "flex", alignItems: "center"}}>
-                        <Tooltip title={"Завантажити дані"}>
-                            <IconButton ref={anchorRef} onClick={handleToggleUpload}>
-                                <input type="file" hidden name={"file"} ref={inputRef} accept={".csv"}
-                                       onChange={changeFileCb}/>
-                                <Upload sx={{color: "primary.contrastText"}}/>
-                            </IconButton>
-                        </Tooltip>
+                        <Box>
+                            <Tooltip title={"Імпорт"}>
+                                <IconButton ref={uploadAnchorRef} onClick={handleToggleUpload}>
+                                    <input type="file" hidden name={"file"} ref={inputRef} accept={".csv"}
+                                           onChange={changeFileCb}/>
+                                    <Upload sx={{color: "primary.contrastText"}}/>
+                                </IconButton>
+                            </Tooltip>
 
-                        <Popper open={open} anchorEl={anchorRef.current} placement="bottom-end" transition>
-                            {({TransitionProps}) => (
-                                <Grow {...TransitionProps} style={{transformOrigin: "top right"}}>
-                                    <Paper>
-                                        <ClickAwayListener onClickAway={handleClose}>
-                                            <MenuList>
-                                                <MenuItem onClick={handleUploadCompanies}>Компанії</MenuItem>
-                                                <MenuItem onClick={handleUploadPollutants}>Забрудники</MenuItem>
-                                                <MenuItem onClick={handleUploadPollutions}>Забруднення</MenuItem>
-                                            </MenuList>
-                                        </ClickAwayListener>
-                                    </Paper>
-                                </Grow>
-                            )}
-                        </Popper>
+                            <Popper open={openUpload} anchorEl={uploadAnchorRef.current} placement="bottom-end" transition>
+                                {({TransitionProps}) => (
+                                    <Grow {...TransitionProps} style={{transformOrigin: "top right"}}>
+                                        <Paper>
+                                            <ClickAwayListener onClickAway={handleCloseUpload}>
+                                                <MenuList>
+                                                    <MenuItem onClick={handleUploadCompanies}>Компанії</MenuItem>
+                                                    <MenuItem onClick={handleUploadPollutants}>Забрудники</MenuItem>
+                                                    <MenuItem onClick={handleUploadPollutions}>Забруднення</MenuItem>
+                                                </MenuList>
+                                            </ClickAwayListener>
+                                        </Paper>
+                                    </Grow>
+                                )}
+                            </Popper>
+                        </Box>
+
+                        <Box>
+                            <Tooltip title={"Експорт"}>
+                                <IconButton ref={downloadAnchorRef} onClick={handleToggleDownload}>
+                                    <input type="file" hidden name={"file"} ref={inputRef} accept={".csv"}
+                                           onChange={changeFileCb}/>
+                                    <Download sx={{color: "primary.contrastText"}}/>
+                                </IconButton>
+                            </Tooltip>
+
+                            <Popper open={openDownload} anchorEl={downloadAnchorRef.current} placement="bottom-end" transition>
+                                {({TransitionProps}) => (
+                                    <Grow {...TransitionProps} style={{transformOrigin: "top right"}}>
+                                        <Paper>
+                                            <ClickAwayListener onClickAway={handleCloseDownload}>
+                                                <MenuList>
+                                                    <MenuItem onClick={handleDownloadCompanies}>Компанії</MenuItem>
+                                                    <MenuItem onClick={handleDownloadPollutants}>Забрудники</MenuItem>
+                                                    <MenuItem onClick={handleDownloadPollutions}>Забруднення</MenuItem>
+                                                </MenuList>
+                                            </ClickAwayListener>
+                                        </Paper>
+                                    </Grow>
+                                )}
+                            </Popper>
+                        </Box>
                     </Box>
                 </Toolbar>
 

@@ -4,6 +4,13 @@ export type AddCompany = {
     location: string
 }
 
+export type UpdateCompany = {
+    id: number,
+    companyName: string,
+    activity: string,
+    location: string
+}
+
 export default interface Company {
     id: number;
 

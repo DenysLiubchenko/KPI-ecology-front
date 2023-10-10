@@ -1,20 +1,20 @@
-import Pollution, {AddPollution} from "./models/pollution";
+import Pollution, {AddPollution, UpdatePollution} from "./models/pollution";
 import axios, {AxiosProgressEvent, AxiosResponse} from "axios";
-import Pollutant, {AddPollutant} from "./models/pollutant";
-import Company, {AddCompany} from "./models/company";
+import Pollutant, {AddPollutant, UpdatePollutant} from "./models/pollutant";
+import Company, {AddCompany, UpdateCompany} from "./models/company";
 
-const baseUrl = "http://localhost:8080";
+export const baseUrl = "http://localhost:8080";
 
 export async function fetchPollution(): Promise<Pollution[]> {
-    return (await fetch(baseUrl + "/data/get/pollution")).json();
+    return (await axios.get(baseUrl + "/data/get/pollution")).data;
 }
 
 export async function fetchPollutant(): Promise<Pollutant[]> {
-    return (await fetch(baseUrl + "/data/get/pollutant")).json();
+    return (await axios.get(baseUrl + "/data/get/pollutant")).data;
 }
 
 export async function fetchCompany(): Promise<Company[]> {
-    return (await fetch(baseUrl + "/data/get/company")).json();
+    return (await axios.get(baseUrl + "/data/get/company")).data;
 }
 
 export async function uploadCsvPollutions(file: File, onProgress?: (progress: AxiosProgressEvent) => void): Promise<AxiosResponse<any, any>> {
@@ -66,4 +66,41 @@ export async function addCompany(company: AddCompany): Promise<Pollution> {
 
 export async function addPollutant(pollutant: AddPollutant): Promise<Pollution> {
     return axios.post(baseUrl + "/data/upload/pollutant", pollutant);
+}
+
+export async function updatePollutant(pollutant: UpdatePollutant): Promise<AxiosResponse<any, any>> {
+    return axios.post(baseUrl + "/data/update/pollutant", pollutant);
+}
+
+export async function updateCompany(company: UpdateCompany): Promise<AxiosResponse<any, any>> {
+    return axios.post(baseUrl + "/data/update/company", company);
+}
+
+export async function updatePollution(pollution: UpdatePollution): Promise<AxiosResponse<any, any>> {
+    return axios.post(baseUrl + "/data/update/pollution", pollution);
+}
+
+function download(url: string): void {
+    const link = document.createElement("a");
+
+    link.setAttribute("href", url);
+    link.style.display = "none";
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+}
+
+export async function downloadPollutants() {
+    download(baseUrl + "/data/get/csv/pollutant");
+}
+
+export async function downloadCompanies() {
+    download(baseUrl + "/data/get/csv/company");
+}
+
+export async function downloadPollutions() {
+    download(baseUrl + "/data/get/csv/pollution");
 }

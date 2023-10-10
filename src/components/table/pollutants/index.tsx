@@ -1,21 +1,16 @@
-import Table, {HeadCell} from "../index";
-import Company, {AddCompany} from "../../../models/company";
-import {ChangeEvent, FC, useContext, useMemo, useState} from "react";
+import Table, {EditableCell, HeadCell} from "../index";
+import {FC, useContext, useMemo} from "react";
 import DataContext from "../../../contexts/Data";
 import {useToast} from "../../../hooks/useToast";
 import {
-    addCompany,
     addPollutant,
-    deleteCompany,
     deletePollutant,
-    fetchCompany,
     fetchPollutant,
-    fetchPollution
+    fetchPollution, updatePollutant, updatePollution
 } from "../../../api";
-import {Box, Button, Modal, Paper, TextField, Typography} from "@mui/material";
-import Pollutant, {AddPollutant} from "../../../models/pollutant";
+import Pollutant from "../../../models/pollutant";
 
-const headCells: HeadCell[] = [
+const headCells: HeadCell<Row>[] = [
     {
         id: "pollutantName",
         numeric: false,
@@ -31,6 +26,11 @@ const headCells: HeadCell[] = [
         numeric: true,
         label: "ГДК (мг/м³)",
     },
+    {
+        id: "elv",
+        numeric: true,
+        label: "ГДВ (г/год.)"
+    }
 ];
 
 type Row = {
@@ -38,6 +38,7 @@ type Row = {
     mfr: number,
     pollutantName: string,
     tlv: number,
+    elv: number
 }
 
 function dataToRows(data: Pollutant[]): Row[] {
@@ -45,19 +46,54 @@ function dataToRows(data: Pollutant[]): Row[] {
         id: e.id,
         pollutantName: e.pollutantName,
         mfr: e.mfr,
-        tlv: e.tlv
+        tlv: e.tlv,
+        elv: e.elv
     }));
 }
 
 const PollutantsTable: FC = () => {
     const {data, setData} = useContext(DataContext);
     const {setToast} = useToast();
-    const [open, setOpen] = useState<boolean>(false);
-    const [newRow, setNewRow] = useState<Partial<AddPollutant>>({});
 
     const rows = useMemo(() => {
         return dataToRows(data.pollutants);
     }, [data]);
+
+    const editableCells: EditableCell<Row>[] = useMemo(() =>
+        [
+            {
+                id: "pollutantName",
+                type: "text",
+                required: true,
+            },
+            {
+                id: "mfr",
+                type: "text",
+                required: true,
+                validate: (value, row) => {
+                    if (isNaN(+value)) return "Введіть число.";
+                    if (Number(value) < 0) return "Число повинно бути додатнім.";
+                },
+            },
+            {
+                id: "tlv",
+                type: "text",
+                required: true,
+                validate: (value, row) => {
+                    if (isNaN(+value)) return "Введіть число.";
+                    if (Number(value) < 0) return "Число повинно бути додатнім.";
+                },
+            },
+            {
+                id: "elv",
+                type: "text",
+                required: true,
+                validate: (value, row) => {
+                    if (isNaN(+value)) return "Введіть число.";
+                    if (Number(value) < 0) return "Число повинно бути додатнім.";
+                },
+            }
+        ], []);
 
     const handleRefresh = async () => {
         try {
@@ -68,19 +104,23 @@ const PollutantsTable: FC = () => {
         }
     }
 
-    const handleAddPollution = async () => {
-        await addPollutant(newRow as Required<AddPollutant>).catch(() => {
+    const handleAddPollutant = async (newRow: Omit<Row, "id">) => {
+        try {
+            await addPollutant(newRow);
+        } catch {
             setToast({title: "Не вдалось додати рядок.", variant: "error"});
-        });
+            return false;
+        }
 
         try {
             const pollutants = await fetchPollutant();
             setData(state => ({...state, pollutants}));
         } catch {
             setToast({title: "Не вдалось оновити дані.", variant: "error"});
+            return false;
         }
 
-        setOpen(false);
+        return true;
     }
 
     const handleDelete = async (selected: number[]) => {
@@ -91,61 +131,42 @@ const PollutantsTable: FC = () => {
         }
 
         try {
-            const companies = await fetchCompany();
             const pollutions = await fetchPollution();
             const pollutants = await fetchPollutant();
-            setData(state => ({companies, pollutants, pollutions}));
+            setData(state => ({companies: state.companies, pollutants, pollutions}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }
     }
 
-    const handleOpenModal = () => {
-        setOpen(true);
+    const handleUpdatePollutant = async (row: Row) => {
+        try {
+            await updatePollutant(row);
+        } catch (e) {
+            setToast({title: "Не вдалось оновити рядок!", variant: "error"});
+            return false;
+        }
+
+        try {
+            const pollutions = await fetchPollution();
+            const pollutants = await fetchPollutant();
+            setData(state => ({companies: state.companies, pollutants, pollutions}));
+        } catch {
+            setToast({title: "Не вдалось завантажити дані.", variant: "error"});
+        }
+
+        return true;
     }
 
-    const handleCloseModal = () => {
-        setOpen(false);
-    }
-
-    const handlePollutantNameChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setNewRow(s => ({...s, pollutantName: e.target.value}))
-    }
-
-    const handleMfrChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setNewRow(s => ({...s, mfr: +e.target.value}))
-    }
-
-    const handleTlvChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setNewRow(s => ({...s, tlv: +e.target.value}))
-    }
-
-    return (<>
-            <Table title={"Забруднення"}
-                   handleRefresh={handleRefresh}
-                   handleAddRow={handleOpenModal}
-                   handleDelete={handleDelete}
-                   headCells={headCells}
-                   rows={rows}/>
-            <Modal open={open} onClose={handleCloseModal}>
-                <Paper sx={{
-                    width: 400,
-                    display:"flex", flexDirection:"column", alignItems: "stretch", position: "absolute",
-                    top: "50%", left: "50%", transform: "translate(-50%, -50%)", border: "1px solid #0000000a", boxShadow: 24,
-                    padding: 2, gap: 2}}>
-                    <Typography variant={"h5"}>Додати нове забруднення</Typography>
-                    <Box display={"flex"} flexDirection={"column"} gap={2}>
-                        <TextField label={"Назва забрудника"} onChange={handlePollutantNameChange}/>
-                        <TextField label={"Масові витрати (г/год)"} onChange={handleMfrChange}/>
-                        <TextField label={"ГДК (мг/м³)"} onChange={handleTlvChange}/>
-                    </Box>
-                    <Box display={"flex"} gap={1} justifyContent={"center"}>
-                        <Button variant={"contained"} onClick={handleAddPollution}>Додати</Button>
-                        <Button color={"error"} variant={"contained"} onClick={handleCloseModal}>Закрити</Button>
-                    </Box>
-                </Paper>
-            </Modal>
-        </>
+    return (
+        <Table title={"Забруднення"}
+               handleRefresh={handleRefresh}
+               handleAddRow={handleAddPollutant}
+               handleDelete={handleDelete}
+               handleUpdateRow={handleUpdatePollutant}
+               headCells={headCells}
+               rows={rows}
+               editableCells={editableCells}/>
     )
 }
 

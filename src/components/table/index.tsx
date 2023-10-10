@@ -2,7 +2,7 @@ import {
     alpha,
     Box,
     Checkbox,
-    IconButton,
+    IconButton, InputAdornment, MenuItem,
     Paper,
     Table as MUITable,
     TableBody,
@@ -16,13 +16,8 @@ import {
     Tooltip,
     Typography
 } from "@mui/material";
-import {FC, useContext, useMemo, useState} from "react";
-import {Add, Close, Delete, Done, Edit, FilterList, Refresh} from "@mui/icons-material";
-import DataContext from "../../contexts/Data";
-import Pollution from "../../models/pollution";
-import {addPollution, deletePollution, fetchPollution} from "../../api";
-import {useToast} from "../../hooks/useToast";
-import ToastContext from "../../contexts/Toast";
+import {useEffect, useMemo, useState} from "react";
+import {Add, Close, Delete, Done, Edit, Error, FilterList, Refresh} from "@mui/icons-material";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
     if (b[orderBy] < a[orderBy]) {
@@ -48,37 +43,24 @@ function getComparator<Key extends keyof any>(
         : (a, b) => -descendingComparator(a, b, orderBy);
 }
 
-export interface HeadCell {
-    id: keyof Row;
+export interface HeadCell<T extends Row> {
+    id: keyof T;
     label: string;
     numeric: boolean;
     select?: string[] | number[];
 }
 
-function dataToRows(data: Pollution[]): Row[] {
-    return data.map<Row>(e => ({
-        id: e.id,
-        companyName: e.company.companyName,
-        location: e.company.location,
-        pollutant: e.pollutant.pollutantName,
-        mfr: e.pollutant.mfr,
-        tlv: e.pollutant.tlv,
-        pollutionValue: e.pollutionValue,
-        year: e.year
-    }));
-}
-
-interface EnhancedTableProps {
+interface EnhancedTableProps<T extends Row> {
     numSelected: number;
     onRequestSort: (event: React.MouseEvent<unknown>, property: keyof Row) => void;
     onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
     order: Order;
     orderBy: string;
     rowCount: number;
-    headCells: HeadCell[];
+    headCells: HeadCell<T>[];
 }
 
-function EnhancedTableHead({ onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort, headCells }: EnhancedTableProps) {
+function EnhancedTableHead<T extends Row>({ onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort, headCells }: EnhancedTableProps<T>) {
     const createSortHandler =
         (property: keyof Row) => (event: React.MouseEvent<unknown>) => {
             onRequestSort(event, property);
@@ -102,14 +84,14 @@ function EnhancedTableHead({ onSelectAllClick, order, orderBy, numSelected, rowC
                 </TableCell>
                 {headCells.map((headCell) => (
                     <TableCell
-                        key={headCell.id}
+                        key={String(headCell.id)}
                         align={headCell.numeric ? 'right' : 'left'}
                         sortDirection={orderBy === headCell.id ? order : false}
                     >
                         <TableSortLabel
                             active={orderBy === headCell.id}
                             direction={orderBy === headCell.id ? order : 'asc'}
-                            onClick={createSortHandler(headCell.id)}
+                            onClick={createSortHandler(String(headCell.id))}
                         >
                             {headCell.label}
                             {orderBy === headCell.id ? (
@@ -198,22 +180,57 @@ export type Row = {
     [key: string]: string | number
 };
 
-export interface TableProps {
+export interface EditableCell<T extends Row> {
+    id: keyof T;
+    type: "select" | "text" | "immutable";
+    onChange?: (field: string, value: string, row: T) => T;
+    values?: {id: number, label: string}[];
+    validate?: (value: string | number, row: T) => string | undefined;
+    required?: boolean;
+}
+
+export interface TableProps<T extends Row> {
     title: string;
     handleRefresh: () => unknown;
     handleDelete: (selected: number[]) => unknown;
-    handleAddRow: () => unknown;
-    rows: Row[];
-    headCells: HeadCell[]
+    handleAddRow: (row: Omit<T, "id">) => Promise<boolean>;
+    handleUpdateRow: (row: T) => Promise<boolean>;
+    rows: T[];
+    headCells: HeadCell<T>[];
+    editableCells: EditableCell<T>[];
 }
 
-const Table: FC<TableProps> = ({title, handleRefresh, handleDelete, handleAddRow, rows, headCells}) => {
+function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow, handleUpdateRow, rows, headCells, editableCells}: TableProps<T>) {
     const [order, setOrder] = useState<Order>('asc');
     const [orderBy, setOrderBy] = useState<keyof Row>("id");
     const [selected, setSelected] = useState<readonly number[]>([]);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
-    const [newRow, setNewRow] = useState<Omit<Row, "id"> | undefined>(undefined);
+    const [newRow, setNewRow] = useState<Omit<T, "id"> | undefined>(undefined);
+    const [editingRow, setEditingRow] = useState<T | undefined>(undefined);
+    const [persistSubmitEdit, setPersistSubmitEdit] = useState<boolean>(false);
+    const [persistSubmitAdd, setPersistSubmitAdd] = useState<boolean>(false);
+
+    useEffect(() => {
+        let error = false;
+
+        editingRow && editableCells && editableCells.forEach(cell => {
+            if (cell.required && !editingRow[cell.id] || cell.validate && cell.validate(editingRow[cell.id], editingRow)) error = true;
+        })
+
+        setPersistSubmitEdit(error);
+    }, [editingRow]);
+
+    useEffect(() => {
+        let error = false;
+
+        newRow && editableCells && editableCells.forEach(cell => {
+            if (cell.id === "id") return;
+            if (cell.required && !(newRow as T)[cell.id] || cell.validate && cell.validate(newRow[cell.id], newRow as T)) error = true;
+        })
+
+        setPersistSubmitAdd(error);
+    }, [newRow]);
 
     const handleRequestSort = (
         event: React.MouseEvent<unknown>,
@@ -277,13 +294,60 @@ const Table: FC<TableProps> = ({title, handleRefresh, handleDelete, handleAddRow
         [order, orderBy, page, rowsPerPage, rows],
     );
 
+    const handleOpenAdd = () => {
+        const emptyRow: any = {};
+
+        editableCells.forEach(cell => {
+            emptyRow[cell.id] = "";
+        })
+
+        setNewRow(emptyRow);
+    }
+
+    const handleCloseAdd = () => {
+        setNewRow(undefined);
+    }
+
+    const handleSubmitAdd = async () => {
+        newRow && await handleAddRow(newRow) && setNewRow(undefined);
+    }
+
+    const handleChangeAddRow = (field: string, value: string, cb?: (field: string, value: string, row: T) => T) => {
+        if (!newRow) return;
+
+        const res = cb && cb(field, value, newRow as T);
+
+        setNewRow(state => ({...state!, [field]: value, ...res}));
+    }
+
+    const handleEditRow = (row: T) => {
+        setEditingRow(row);
+        setSelected(state => state.filter(e => e !== row.id))
+    }
+
+    const handleCloseEdit = () => {
+        setEditingRow(undefined);
+    }
+
+    const handleSubmitEdit = async () => {
+        await handleUpdateRow(editingRow!) && setEditingRow(undefined);
+    }
+
+    const handleChangeEdit = (field: string, value: string, cb?: (field: string, value: string, row: T) => T) => {
+        if (!editingRow) return;
+
+        const res = cb && cb(field, value, editingRow);
+
+        setEditingRow(state => ({...state!, [field]: value, ...res}));
+    }
+
     return (
         <Box sx={{ width: '100%' }}>
             <Paper sx={{ width: '100%', mb: 2 }}>
                 <EnhancedTableToolbar
                     numSelected={selected.length}
                     handleDelete={() => {handleDelete(selected as number[]); setSelected([])}}
-                    handleAddRow={handleAddRow}
+                    handleAddRow={handleOpenAdd}
                     handleRefresh={handleRefresh}
                     title={title}
                 />
@@ -303,9 +367,96 @@ const Table: FC<TableProps> = ({title, handleRefresh, handleDelete, handleAddRow
                             headCells={headCells}
                         />
                         <TableBody>
+                            {newRow && <TableRow key={"add"}>
+                                <TableCell padding="checkbox">
+                                    <Box display={"flex"}>
+                                        <IconButton onClick={handleCloseAdd}>
+                                            <Close/>
+                                        </IconButton>
+                                        <IconButton disabled={persistSubmitAdd} onClick={handleSubmitAdd}>
+                                            <Done/>
+                                        </IconButton>
+                                    </Box>
+                                </TableCell>
+                                {editableCells.map(cell => {
+                                    if (cell.id === "id") return;
+
+                                    const error = cell.validate && cell.validate(newRow[cell.id], newRow as T);
+
+                                    return <TableCell key={String(cell.id)}>
+                                        {cell.type === "select" ?
+                                            <TextField variant={"standard"} select defaultValue={""}
+                                                       value={newRow[cell.id as keyof Omit<T, "id">]} fullWidth
+                                                       sx={{maxWidth: "200px"}}  required={cell.required}
+                                                       label={headCells.find(e => e.id === cell.id)?.label}
+                                                       onChange={e => handleChangeAddRow(String(cell.id), e.target.value, cell.onChange!)}>
+                                                {cell.values?.map(v =>
+                                                    <MenuItem key={v.id} value={v.label}>{v.label}</MenuItem>)}
+                                            </TextField>
+                                            : <TextField variant={"standard"} disabled={cell.type === "immutable"}
+                                                         error={!!error} required={cell.required}
+                                                         label={headCells.find(e => e.id === cell.id)?.label}
+                                                         value={newRow[cell.id as keyof Omit<T, "id">]}
+                                                         InputProps={{
+                                                             endAdornment: error &&
+                                                                 <InputAdornment position="end">
+                                                                     <Tooltip title={error}>
+                                                                         <Error color={"error"} fontSize={"small"}/>
+                                                                     </Tooltip>
+                                                                 </InputAdornment>
+                                                         }}
+                                                         onChange={e => handleChangeAddRow(String(cell.id), e.target.value, cell.onChange!)}/>
+                                        }
+                                    </TableCell>
+                                })}
+                            </TableRow>}
+
                             {visibleRows.map((row, index) => {
                                 const isItemSelected = isSelected(row.id);
                                 const labelId = `enhanced-table-checkbox-${index}`;
+
+                                if (editingRow?.id === row.id)
+                                    return (
+                                        <TableRow key={row.id}>
+                                            <TableCell padding="checkbox">
+                                                <Box display={"flex"}>
+                                                    <IconButton onClick={handleCloseEdit}>
+                                                        <Close/>
+                                                    </IconButton>
+                                                    <IconButton disabled={persistSubmitEdit} onClick={handleSubmitEdit}>
+                                                        <Done/>
+                                                    </IconButton>
+                                                </Box>
+                                            </TableCell>
+                                            {editableCells.map(cell => {
+                                                const error = cell.validate && cell.validate(editingRow[cell.id], editingRow);
+
+                                                return <TableCell key={String(cell.id)}>
+                                                    {cell.type === "select" ?
+                                                        <TextField variant={"standard"} select defaultValue={""}
+                                                                   value={editingRow[cell.id]} fullWidth
+                                                                   sx={{maxWidth: "200px"}}
+                                                                   onChange={e => handleChangeEdit(String(cell.id), e.target.value, cell.onChange!)}>
+                                                            {cell.values?.map(v =>
+                                                                <MenuItem key={v.id} value={v.label}>{v.label}</MenuItem>)}
+                                                        </TextField>
+                                                        : <TextField variant={"standard"} disabled={cell.type === "immutable"}
+                                                                     error={!!error} required={cell.required} label={headCells.find(e => e.id === cell.id)?.label}
+                                                                     value={editingRow[cell.id]}
+                                                                     InputProps={{
+                                                                         endAdornment: error &&
+                                                                             <InputAdornment position="end">
+                                                                                 <Tooltip title={error}>
+                                                                                     <Error color={"error"} fontSize={"small"}/>
+                                                                                 </Tooltip>
+                                                                             </InputAdornment>
+                                                                     }}
+                                                                     onChange={e => handleChangeEdit(String(cell.id), e.target.value, cell.onChange!)}/>
+                                                    }
+                                                </TableCell>
+                                            })}
+                                        </TableRow>
+                                    )
 
                                 return (
                                     <TableRow
@@ -329,19 +480,19 @@ const Table: FC<TableProps> = ({title, handleRefresh, handleDelete, handleAddRow
                                                               }}
                                                     />
                                                 </IconButton>
-                                                <IconButton>
+                                                <IconButton onClick={(e) => {e.stopPropagation(); handleEditRow(row)}}>
                                                     <Edit/>
                                                 </IconButton>
                                             </Box>
                                         </TableCell>
                                         {headCells.map(e => {
-                                            return <TableCell align="right">{row[e.id]}</TableCell>
+                                            return <TableCell key={String(e.id)} align="right">{row[e.id]}</TableCell>
                                         })}
                                     </TableRow>
                                 );
                             })}
                             {emptyRows > 0 && (
-                                <TableRow
+                                <TableRow key={"emptyRow"}
                                     style={{
                                         height: (33) * emptyRows,
                                     }}
