@@ -47,6 +47,7 @@ export interface HeadCell<T extends Row> {
     id: keyof T;
     label: string;
     numeric: boolean;
+    round?: number;
     select?: string[] | number[];
 }
 
@@ -486,7 +487,9 @@ function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow,
                                             </Box>
                                         </TableCell>
                                         {headCells.map(e => {
-                                            return <TableCell key={String(e.id)} align="right">{row[e.id]}</TableCell>
+                                            return <TableCell key={String(e.id)} align="right">
+                                                {e.numeric && e.round ? +Number(row[e.id]).toPrecision(e.round) : row[e.id]}
+                                            </TableCell>
                                         })}
                                     </TableRow>
                                 );

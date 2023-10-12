@@ -37,19 +37,27 @@ const headCells: HeadCell<Row>[] = [
         label: "ГДВ (г/год)"
     },
     {
-        id: "addLadd",
-        numeric: true,
-        label: "ADD/LADD"
-    },
-    {
         id: "pollutionConcentration",
         numeric: true,
+        round: 3,
         label: "Концентрація (мг/м³)"
     },
     {
         id: "pollutionValue",
         numeric: true,
         label: "Викиди (г/год)",
+    },
+    {
+        id: "hq",
+        numeric: true,
+        round: 3,
+        label: "Коефіцієнт небезпеки"
+    },
+    {
+        id: "cr",
+        numeric: true,
+        round: 3,
+        label: "Інд. канцерогенний ризик"
     },
     {
         id: "year",
@@ -68,7 +76,8 @@ type Row = {
     elv: number,
     pollutionValue: number,
     pollutionConcentration: number,
-    addLadd: number,
+    hq: number,
+    cr: number,
     year: number
 }
 
@@ -83,7 +92,8 @@ function dataToRows(data: Pollution[]): Row[] {
         elv: e.pollutant.elv,
         pollutionValue: e.pollutionValue,
         pollutionConcentration: e.pollutionConcentration,
-        addLadd: Number(e.addLadd.toPrecision(3)),
+        hq: e.hq,
+        cr: e.cr,
         year: e.year
     }));
 }
@@ -139,10 +149,6 @@ const PollutionsTable: FC = () => {
                 type: "immutable",
             },
             {
-                id: "addLadd",
-                type: "immutable"
-            },
-            {
                 id: "pollutionConcentration",
                 type: "text",
                 validate: (value, row) => {
@@ -159,6 +165,14 @@ const PollutionsTable: FC = () => {
                     if (Number(value) < 0) return "Число повинно бути додатнім.";
                 },
                 required: true
+            },
+            {
+                id: "hq",
+                type: "immutable"
+            },
+            {
+                id: "cr",
+                type: "immutable"
             },
             {
                 id: "year",
@@ -189,7 +203,6 @@ const PollutionsTable: FC = () => {
             year: newRow.year,
             pollutionValue: newRow.pollutionValue,
             pollutionConcentration: newRow.pollutionConcentration,
-            addLadd: newRow.addLadd
         };
 
         try {
@@ -232,7 +245,6 @@ const PollutionsTable: FC = () => {
                 company: {id: data.companies.find(c => c.companyName === row.companyName)!.id},
                 pollutant: {id: data.pollutants.find(p => p.pollutantName === row.pollutantName)!.id},
                 pollutionConcentration: row.pollutionConcentration,
-                addLadd: row.addLadd
             });
         } catch (e) {
             setToast({title: "Не вдалось оновити рядок!", variant: "error"});

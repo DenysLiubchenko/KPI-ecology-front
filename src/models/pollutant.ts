@@ -23,4 +23,8 @@ export default interface Pollutant {
     tlv: number;
 
     elv: number;
+
+    sf: number;
+
+    rfc: number;
 }

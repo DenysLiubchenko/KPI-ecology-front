@@ -6,7 +6,6 @@ export type AddPollution = {
     pollutant: {id: number},
     pollutionValue: number,
     pollutionConcentration: number,
-    addLadd: number,
     year: number
 }
 
@@ -16,7 +15,6 @@ export type UpdatePollution = {
     pollutant: {id: number},
     pollutionValue: number,
     pollutionConcentration: number,
-    addLadd: number,
     year: number
 }
 
@@ -31,7 +29,9 @@ export default interface Pollution {
 
     pollutionConcentration: number;
 
-    addLadd: number;
-
     year: number;
+
+    hq: number;
+
+    cr: number;
 }

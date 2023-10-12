@@ -30,6 +30,18 @@ const headCells: HeadCell<Row>[] = [
         id: "elv",
         numeric: true,
         label: "ГДВ (г/год.)"
+    },
+    {
+        id: "rfc",
+        numeric: true,
+        round: 3,
+        label: "Референтна концетрація (мг/куб.м)"
+    },
+    {
+        id: "sf",
+        numeric: true,
+        round: 3,
+        label: "Фактор нахилу (мг/(кг*доба))"
     }
 ];
 
@@ -38,7 +50,9 @@ type Row = {
     mfr: number,
     pollutantName: string,
     tlv: number,
-    elv: number
+    elv: number,
+    rfc: number,
+    sf: number
 }
 
 function dataToRows(data: Pollutant[]): Row[] {
@@ -47,7 +61,9 @@ function dataToRows(data: Pollutant[]): Row[] {
         pollutantName: e.pollutantName,
         mfr: e.mfr,
         tlv: e.tlv,
-        elv: e.elv
+        elv: e.elv,
+        rfc: e.rfc,
+        sf: e.sf
     }));
 }
 
@@ -92,7 +108,25 @@ const PollutantsTable: FC = () => {
                     if (isNaN(+value)) return "Введіть число.";
                     if (Number(value) < 0) return "Число повинно бути додатнім.";
                 },
-            }
+            },
+            {
+                id: "rfc",
+                type: "text",
+                required: true,
+                validate: (value) => {
+                    if (isNaN(+value)) return "Введіть число.";
+                    if (Number(value) < 0) return "Число повинно бути додатнім.";
+                }
+            },
+            {
+                id: "sf",
+                type: "text",
+                required: true,
+                validate: (value) => {
+                    if (isNaN(+value)) return "Введіть число.";
+                    if (Number(value) < 0) return "Число повинно бути додатнім.";
+                }
+            },
         ], []);
 
     const handleRefresh = async () => {
