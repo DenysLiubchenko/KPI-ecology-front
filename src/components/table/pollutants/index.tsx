@@ -34,13 +34,13 @@ const headCells: HeadCell<Row>[] = [
     {
         id: "rfc",
         numeric: true,
-        round: 3,
+        round: {digits: 3, type: "precision"},
         label: "Референтна концетрація (мг/куб.м)"
     },
     {
         id: "sf",
         numeric: true,
-        round: 3,
+        round: {digits: 3, type: "precision"},
         label: "Фактор нахилу (мг/(кг*доба))"
     }
 ];

@@ -98,7 +98,7 @@ const headCells: HeadCell<Row>[] = [
     {
         id: "pollutionConcentration",
         numeric: true,
-        round: 3,
+        round: {digits: 3, type: "precision"},
         label: "Концентрація (мг/м³)"
     },
     {
@@ -109,7 +109,7 @@ const headCells: HeadCell<Row>[] = [
     {
         id: "hq",
         numeric: true,
-        round: 3,
+        round: {digits: 3, type: "precision"},
         label: "Неканцерогенний ризик",
         color: (value) =>
             hqColors.find(e =>
@@ -127,7 +127,7 @@ const headCells: HeadCell<Row>[] = [
     {
         id: "cr",
         numeric: true,
-        round: 3,
+        round: {digits: 3, type: "precision"},
         label: "Канцерогенний ризик",
         color: (value) =>
             crColors.find(e =>
@@ -141,6 +141,12 @@ const headCells: HeadCell<Row>[] = [
                 !e.max && e.min && +value >= e.min ||
                 !e.min && e.max && +value <= e.max
             )?.tooltip
+    },
+    {
+        id: "penalty",
+        numeric: true,
+        round: {digits: 2, type: "fixed"},
+        label: "Штраф (грн)"
     },
     {
         id: "year",
@@ -161,6 +167,7 @@ type Row = {
     pollutionConcentration: number,
     hq: number,
     cr: number,
+    penalty: number,
     year: number
 }
 
@@ -177,6 +184,7 @@ function dataToRows(data: Pollution[]): Row[] {
         pollutionConcentration: e.pollutionConcentration,
         hq: e.hq,
         cr: e.cr,
+        penalty: e.penalty,
         year: e.year
     }));
 }
@@ -255,6 +263,10 @@ const PollutionsTable: FC = () => {
             },
             {
                 id: "cr",
+                type: "immutable"
+            },
+            {
+                id: "penalty",
                 type: "immutable"
             },
             {

@@ -34,4 +34,6 @@ export default interface Pollution {
     hq: number;
 
     cr: number;
+
+    penalty: number;
 }

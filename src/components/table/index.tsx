@@ -47,7 +47,7 @@ export interface HeadCell<T extends Row> {
     id: keyof T;
     label: string;
     numeric: boolean;
-    round?: number;
+    round?: {digits: number, type: "precision" | "fixed"};
     select?: string[] | number[];
     color?: (value: string | number) => string | undefined;
     tooltip?: (value: string | number) => string | undefined;
@@ -489,7 +489,12 @@ function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow,
                                             </Box>
                                         </TableCell>
                                         {headCells.map(e => {
-                                            const child = <div>{e.numeric && e.round ? +Number(row[e.id]).toPrecision(e.round) : row[e.id]}</div>;
+                                            const number = e.numeric && (e.round && (
+                                                e.round.type === "precision" && +Number(row[e.id]).toPrecision(e.round.digits) ||
+                                                e.round.type === "fixed" && +Number(row[e.id]).toFixed(e.round.digits)
+                                            ) || Number(row[e.id]));
+
+                                            const child = <div>{e.numeric ? number : row[e.id]}</div>;
                                             const tooltip = e.tooltip && e.tooltip(row[e.id]);
 
                                             return <TableCell key={String(e.id)} align="right" sx={{bgcolor: e.color && e.color(row[e.id])}}>
