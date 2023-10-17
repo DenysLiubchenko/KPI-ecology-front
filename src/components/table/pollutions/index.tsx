@@ -110,7 +110,7 @@ const headCells: HeadCell<Row>[] = [
         id: "hq",
         numeric: true,
         round: 3,
-        label: "Коефіцієнт небезпеки",
+        label: "Неканцерогенний ризик",
         color: (value) =>
             hqColors.find(e =>
                 e.min && e.max && +value >= e.min && +value <= e.max ||
@@ -128,7 +128,7 @@ const headCells: HeadCell<Row>[] = [
         id: "cr",
         numeric: true,
         round: 3,
-        label: "Інд. канцерогенний ризик",
+        label: "Канцерогенний ризик",
         color: (value) =>
             crColors.find(e =>
                 e.min && e.max && +value >= e.min && +value <= e.max ||
