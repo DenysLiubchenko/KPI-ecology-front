@@ -49,6 +49,8 @@ export interface HeadCell<T extends Row> {
     numeric: boolean;
     round?: number;
     select?: string[] | number[];
+    color?: (value: string | number) => string | undefined;
+    tooltip?: (value: string | number) => string | undefined;
 }
 
 interface EnhancedTableProps<T extends Row> {
@@ -487,8 +489,14 @@ function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow,
                                             </Box>
                                         </TableCell>
                                         {headCells.map(e => {
-                                            return <TableCell key={String(e.id)} align="right">
-                                                {e.numeric && e.round ? +Number(row[e.id]).toPrecision(e.round) : row[e.id]}
+                                            const child = <div>{e.numeric && e.round ? +Number(row[e.id]).toPrecision(e.round) : row[e.id]}</div>;
+                                            const tooltip = e.tooltip && e.tooltip(row[e.id]);
+
+                                            return <TableCell key={String(e.id)} align="right" sx={{bgcolor: e.color && e.color(row[e.id])}}>
+                                                {tooltip && <Tooltip title={tooltip}>
+                                                    {child}
+                                                </Tooltip> ||
+                                                    child}
                                             </TableCell>
                                         })}
                                     </TableRow>

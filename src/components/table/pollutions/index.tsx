@@ -5,6 +5,65 @@ import DataContext from "../../../contexts/Data";
 import {useToast} from "../../../hooks/useToast";
 import {addPollution, deletePollution, fetchPollution, updatePollution} from "../../../api";
 
+type riskColor = {
+    label: string,
+    color: string,
+    min?: number,
+    max?: number
+    tooltip?: string,
+}
+
+const hqColors: riskColor[] = [
+    {
+        label: "Високий",
+        color: "#ff2222",
+        min: 0.001,
+        tooltip: "Високий (> 10^-3) - не прийнятний для виробничих умов і населення. Необхідне здійснення заходів з усунення або зниження ризику"
+    },
+    {
+        label: "Середній",
+        color: "#ff8923",
+        min: 0.0001,
+        max: 0.001,
+        tooltip: "Середній (10^-3 - 10^-4) - припустимий для виробничих умов впливу на все населення необхідний динамічний контроль і поглиблене вивчення джерел і можливих наслідків шкідливих впливів для вирішення питання про заходи з управління ризиком"
+    },
+    {
+        label: "Низький",
+        color: "#ffed37",
+        min: 0.000001,
+        max: 0.001,
+        tooltip: "Низький (10^-4 - 10^-6) - припустимий ризик (рівень, на якому, як правило, встановлюються гігієнічні нормативи для населення)"
+    },
+    {
+        label: "Мінімальний",
+        color: "#9cff33",
+        max: 0.000001,
+        tooltip: "Мінімальний (< 10^-6) - бажана (цільова) величина ризику при проведенні оздоровчих і природоохоронних заходів"
+    },
+]
+
+const crColors: riskColor[] = [
+    {
+        label: "> 1",
+        color: "#ff2222",
+        min: 1,
+        tooltip: "(> 1) Імовірність розвитку шкідливих ефектів зростає пропорційно збільшенню HQ"
+    },
+    {
+        label: "1",
+        color: "#ff8923",
+        min: 1,
+        max: 1,
+        tooltip: "(= 1) Гранична величина, що не потребує термінових заходів, однак не може розглядатися як досить прийнятна"
+    },
+    {
+        label: "< 1",
+        color: "#9cff33",
+        max: 1,
+        tooltip: "(< 1) Ризик виникнення шкідливих ефектів розглядають як зневажливо малий"
+    },
+]
+
 const headCells: HeadCell<Row>[] = [
     {
         id: "companyName",
@@ -51,13 +110,37 @@ const headCells: HeadCell<Row>[] = [
         id: "hq",
         numeric: true,
         round: 3,
-        label: "Коефіцієнт небезпеки"
+        label: "Коефіцієнт небезпеки",
+        color: (value) =>
+            hqColors.find(e =>
+                e.min && e.max && +value >= e.min && +value <= e.max ||
+                !e.max && e.min && +value >= e.min ||
+                !e.min && e.max && +value <= e.max
+            )?.color,
+        tooltip: (value) =>
+            hqColors.find(e =>
+                e.min && e.max && +value >= e.min && +value <= e.max ||
+                !e.max && e.min && +value >= e.min ||
+                !e.min && e.max && +value <= e.max
+            )?.tooltip
     },
     {
         id: "cr",
         numeric: true,
         round: 3,
-        label: "Інд. канцерогенний ризик"
+        label: "Інд. канцерогенний ризик",
+        color: (value) =>
+            crColors.find(e =>
+                e.min && e.max && +value >= e.min && +value <= e.max ||
+                !e.max && e.min && +value >= e.min ||
+                !e.min && e.max && +value <= e.max
+            )?.color,
+        tooltip: (value) =>
+            crColors.find(e =>
+                e.min && e.max && +value >= e.min && +value <= e.max ||
+                !e.max && e.min && +value >= e.min ||
+                !e.min && e.max && +value <= e.max
+            )?.tooltip
     },
     {
         id: "year",
