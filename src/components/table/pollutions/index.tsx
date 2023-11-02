@@ -81,6 +81,11 @@ const headCells: HeadCell<Row>[] = [
         label: "Забрудник",
     },
     {
+        id: "pollutantTypeName",
+        numeric: false,
+        label: "Тип забруднення"
+    },
+    {
         id: "mfr",
         numeric: true,
         label: "Масові витрати (г/год)",
@@ -149,6 +154,12 @@ const headCells: HeadCell<Row>[] = [
         label: "Штраф (грн)"
     },
     {
+        id: "tax",
+        numeric: true,
+        round: {digits: 2, type: "fixed"},
+        label: "Податок (грн)"
+    },
+    {
         id: "year",
         numeric: true,
         label: "Рік",
@@ -168,6 +179,8 @@ type Row = {
     hq: number,
     cr: number,
     penalty: number,
+    tax: number,
+    pollutantTypeName: string,
     year: number
 }
 
@@ -185,6 +198,8 @@ function dataToRows(data: Pollution[]): Row[] {
         hq: e.hq,
         cr: e.cr,
         penalty: e.penalty,
+        tax: e.tax,
+        pollutantTypeName: e.pollutant.pollutantType.pollutantTypeName,
         year: e.year
     }));
 }
@@ -223,9 +238,14 @@ const PollutionsTable: FC = () => {
                     mfr: data.pollutants.find(e => e.pollutantName === value)!.mfr,
                     tlv: data.pollutants.find(e => e.pollutantName === value)!.tlv,
                     elv: data.pollutants.find(e => e.pollutantName === value)!.elv,
+                    pollutantTypeName: data.pollutants.find(e => e.pollutantName === value)!.pollutantType.pollutantTypeName,
                 }),
                 values: data.pollutants.map(e => ({id: e.id, label: e.pollutantName})),
                 required: true
+            },
+            {
+                id: "pollutantTypeName",
+                type: "immutable"
             },
             {
                 id: "mfr",
@@ -267,6 +287,10 @@ const PollutionsTable: FC = () => {
             },
             {
                 id: "penalty",
+                type: "immutable"
+            },
+            {
+                id: "tax",
                 type: "immutable"
             },
             {

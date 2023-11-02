@@ -6,15 +6,20 @@ import {
     addPollutant,
     deletePollutant,
     fetchPollutant,
-    fetchPollution, updatePollutant, updatePollution
+    fetchPollution, updatePollutant
 } from "../../../api";
-import Pollutant from "../../../models/pollutant";
+import Pollutant, {AddPollutant, UpdatePollutant} from "../../../models/pollutant";
 
 const headCells: HeadCell<Row>[] = [
     {
         id: "pollutantName",
         numeric: false,
         label: "Назва забрудника",
+    },
+    {
+        id: "pollutantTypeName",
+        numeric: false,
+        label: "Тип забрудника",
     },
     {
         id: "mfr",
@@ -42,6 +47,12 @@ const headCells: HeadCell<Row>[] = [
         numeric: true,
         round: {digits: 3, type: "precision"},
         label: "Фактор нахилу (мг/(кг*доба))"
+    },
+    {
+        id: "taxRate",
+        numeric: true,
+        round: {digits: 2, type: "fixed"},
+        label: "Ставка податку (грн/т)"
     }
 ];
 
@@ -49,21 +60,25 @@ type Row = {
     id: number,
     mfr: number,
     pollutantName: string,
+    pollutantTypeName: string,
     tlv: number,
     elv: number,
     rfc: number,
-    sf: number
+    sf: number,
+    taxRate: number,
 }
 
 function dataToRows(data: Pollutant[]): Row[] {
     return data.map<Row>(e => ({
         id: e.id,
         pollutantName: e.pollutantName,
+        pollutantTypeName: e.pollutantType.pollutantTypeName,
         mfr: e.mfr,
         tlv: e.tlv,
         elv: e.elv,
         rfc: e.rfc,
-        sf: e.sf
+        sf: e.sf,
+        taxRate: e.taxRate
     }));
 }
 
@@ -80,6 +95,16 @@ const PollutantsTable: FC = () => {
             {
                 id: "pollutantName",
                 type: "text",
+                required: true,
+            },
+            {
+                id: "pollutantTypeName",
+                type: "select",
+                onChange: (field, value, row) => ({
+                    ...row,
+                    pollutantTypeName: value,
+                }),
+                values: data.pollutantTypes.map(e => ({id: e.id, label: e.pollutantTypeName})),
                 required: true,
             },
             {
@@ -127,7 +152,16 @@ const PollutantsTable: FC = () => {
                     if (Number(value) < 0) return "Число повинно бути додатнім.";
                 }
             },
-        ], []);
+            {
+                id: "taxRate",
+                type: "text",
+                required: true,
+                validate: (value) => {
+                    if (isNaN(+value)) return "Введіть число.";
+                    if (Number(value) < 0) return "Число повинно бути додатнім.";
+                }
+            },
+        ], [data.pollutantTypes]);
 
     const handleRefresh = async () => {
         try {
@@ -139,8 +173,13 @@ const PollutantsTable: FC = () => {
     }
 
     const handleAddPollutant = async (newRow: Omit<Row, "id">) => {
+        const { pollutantTypeName, ..._newRow } = {
+            ...newRow,
+            pollutantType: {id: data.pollutantTypes.find(e => e.pollutantTypeName === newRow.pollutantTypeName)!.id},
+        };
+
         try {
-            await addPollutant(newRow);
+            await addPollutant(_newRow);
         } catch {
             setToast({title: "Не вдалось додати рядок.", variant: "error"});
             return false;
@@ -167,15 +206,20 @@ const PollutantsTable: FC = () => {
         try {
             const pollutions = await fetchPollution();
             const pollutants = await fetchPollutant();
-            setData(state => ({companies: state.companies, pollutants, pollutions}));
+            setData(state => ({companies: state.companies, pollutantTypes: state.pollutantTypes, pollutants, pollutions}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }
     }
 
     const handleUpdatePollutant = async (row: Row) => {
+        const { pollutantTypeName, ..._row } = {
+            ...row,
+            pollutantType: {id: data.pollutantTypes.find(e => e.pollutantTypeName === row.pollutantTypeName)!.id},
+        };
+
         try {
-            await updatePollutant(row);
+            await updatePollutant(_row);
         } catch (e) {
             setToast({title: "Не вдалось оновити рядок!", variant: "error"});
             return false;
@@ -184,7 +228,7 @@ const PollutantsTable: FC = () => {
         try {
             const pollutions = await fetchPollution();
             const pollutants = await fetchPollutant();
-            setData(state => ({companies: state.companies, pollutants, pollutions}));
+            setData(state => ({companies: state.companies, pollutantTypes: state.pollutantTypes, pollutants, pollutions}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }

@@ -36,4 +36,6 @@ export default interface Pollution {
     cr: number;
 
     penalty: number;
+
+    tax: number;
 }

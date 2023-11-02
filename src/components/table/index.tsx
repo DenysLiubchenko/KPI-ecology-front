@@ -16,8 +16,8 @@ import {
     Tooltip,
     Typography
 } from "@mui/material";
-import {useEffect, useMemo, useState} from "react";
-import {Add, Close, Delete, Done, Edit, Error, FilterList, Refresh} from "@mui/icons-material";
+import {ChangeEventHandler, useEffect, useMemo, useState} from "react";
+import {Add, Close, Delete, Done, Edit, Error, Refresh} from "@mui/icons-material";
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
     if (b[orderBy] < a[orderBy]) {
@@ -116,9 +116,10 @@ interface EnhancedTableToolbarProps {
     handleAddRow: () => unknown;
     handleRefresh: () => unknown;
     title: string;
+    handleFilterChange: ChangeEventHandler<HTMLInputElement>;
 }
 
-function EnhancedTableToolbar({numSelected, handleDelete, handleAddRow, title, handleRefresh}: EnhancedTableToolbarProps) {
+function EnhancedTableToolbar({numSelected, handleDelete, handleAddRow, title, handleRefresh, handleFilterChange}: EnhancedTableToolbarProps) {
     return (
         <Toolbar
             sx={{
@@ -157,6 +158,7 @@ function EnhancedTableToolbar({numSelected, handleDelete, handleAddRow, title, h
                 </Tooltip>
             ) : (
                 <>
+                    <TextField label="Фільтр" variant={"standard"} onChange={handleFilterChange}/>
                     <Tooltip title="Додати поле">
                         <IconButton onClick={handleAddRow}>
                             <Add/>
@@ -165,11 +167,6 @@ function EnhancedTableToolbar({numSelected, handleDelete, handleAddRow, title, h
                     <Tooltip title="Оновити">
                         <IconButton onClick={handleRefresh}>
                             <Refresh />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Фільтр">
-                        <IconButton>
-                            <FilterList />
                         </IconButton>
                     </Tooltip>
                 </>
@@ -203,6 +200,10 @@ export interface TableProps<T extends Row> {
     editableCells: EditableCell<T>[];
 }
 
+function filterRows<T extends Row>(filter: string, rows: T[]) {
+    return rows.filter(e => Object.values(e).find(value => String(value).toLowerCase().search(filter.toLowerCase()) >= 0));
+}
+
 function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow, handleUpdateRow, rows, headCells, editableCells}: TableProps<T>) {
     const [order, setOrder] = useState<Order>('asc');
     const [orderBy, setOrderBy] = useState<keyof Row>("id");
@@ -213,6 +214,7 @@ function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow,
     const [editingRow, setEditingRow] = useState<T | undefined>(undefined);
     const [persistSubmitEdit, setPersistSubmitEdit] = useState<boolean>(false);
     const [persistSubmitAdd, setPersistSubmitAdd] = useState<boolean>(false);
+    const [filter, setFilter] = useState<string>("");
 
     useEffect(() => {
         let error = false;
@@ -289,12 +291,17 @@ function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow,
         page > 0 ? Math.max(0, (1 + page) * rowsPerPage - rows.length) : 0;
 
     const visibleRows = useMemo(
-        () =>
-            rows.slice().sort(getComparator(order, orderBy)).slice(
+        () => {
+            let filteredRows = rows.slice();
+
+            if (filter) filteredRows = filterRows(filter, filteredRows);
+
+            return filteredRows.sort(getComparator(order, orderBy)).slice(
                 page * rowsPerPage,
                 page * rowsPerPage + rowsPerPage,
-            ),
-        [order, orderBy, page, rowsPerPage, rows],
+            )
+        },
+        [order, orderBy, page, rowsPerPage, rows, filter],
     );
 
     const handleOpenAdd = () => {
@@ -344,6 +351,10 @@ function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow,
         setEditingRow(state => ({...state!, [field]: value, ...res}));
     }
 
+    const handleFilterChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+        setFilter(e.target.value);
+    }
+
     return (
         <Box sx={{ width: '100%' }}>
             <Paper sx={{ width: '100%', mb: 2 }}>
@@ -352,6 +363,7 @@ function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow,
                     handleDelete={() => {handleDelete(selected as number[]); setSelected([])}}
                     handleAddRow={handleOpenAdd}
                     handleRefresh={handleRefresh}
+                    handleFilterChange={handleFilterChange}
                     title={title}
                 />
                 <TableContainer>

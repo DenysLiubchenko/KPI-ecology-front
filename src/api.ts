@@ -2,6 +2,7 @@ import Pollution, {AddPollution, UpdatePollution} from "./models/pollution";
 import axios, {AxiosProgressEvent, AxiosResponse} from "axios";
 import Pollutant, {AddPollutant, UpdatePollutant} from "./models/pollutant";
 import Company, {AddCompany, UpdateCompany} from "./models/company";
+import PollutantType from "./models/pollutantType";
 
 export const baseUrl = "http://localhost:8080";
 
@@ -15,6 +16,10 @@ export async function fetchPollutant(): Promise<Pollutant[]> {
 
 export async function fetchCompany(): Promise<Company[]> {
     return (await axios.get(baseUrl + "/data/get/company")).data;
+}
+
+export async function fetchPollutantType(): Promise<PollutantType[]> {
+    return (await axios.get(baseUrl + "/data/get/pollutantType")).data;
 }
 
 export async function uploadCsvPollutions(file: File, onProgress?: (progress: AxiosProgressEvent) => void): Promise<AxiosResponse<any, any>> {

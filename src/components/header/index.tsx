@@ -16,7 +16,7 @@ import {
     downloadCompanies,
     downloadPollutants, downloadPollutions,
     fetchCompany,
-    fetchPollutant,
+    fetchPollutant, fetchPollutantType,
     fetchPollution,
     uploadCsvCompanies,
     uploadCsvPollutants,
@@ -107,7 +107,8 @@ const Header = () => {
                 const pollutions = await fetchPollution();
                 const pollutants = await fetchPollutant();
                 const companies = await fetchCompany();
-                setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || []})
+                const pollutantTypes = await fetchPollutantType();
+                setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || [], pollutantTypes: pollutantTypes || []})
             } catch (e) {
                 setToast({
                     title: "Не вдалось завантажити дані.\nПеревірте підключення.",

@@ -2,11 +2,13 @@ import {createContext, Dispatch, FC, ReactNode, SetStateAction, useState} from "
 import Pollution from "../models/pollution";
 import Company from "../models/company";
 import Pollutant from "../models/pollutant";
+import PollutantType from "../models/pollutantType";
 
 export type Data = {
     pollutions: Pollution[],
     companies: Company[],
     pollutants: Pollutant[]
+    pollutantTypes: PollutantType[]
 }
 
 const DataContext = createContext<{
@@ -16,7 +18,8 @@ const DataContext = createContext<{
     data: {
         pollutions: [],
         companies: [],
-        pollutants: []
+        pollutants: [],
+        pollutantTypes: []
     },
     setData: () => {}
 });
@@ -25,7 +28,8 @@ export const DataProvider: FC<{children: ReactNode}> = ({children}) => {
     const [data, setData] = useState<Data>({
         pollutants: [],
         companies: [],
-        pollutions: []
+        pollutions: [],
+        pollutantTypes: []
     });
 
     return (

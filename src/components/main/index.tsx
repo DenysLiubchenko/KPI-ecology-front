@@ -2,7 +2,7 @@ import {Container} from "@mui/material";
 import React, {useContext, useEffect} from "react";
 import Table from "../table";
 import DataContext from "../../contexts/Data";
-import {fetchCompany, fetchPollutant, fetchPollution} from "../../api";
+import {fetchCompany, fetchPollutant, fetchPollutantType, fetchPollution} from "../../api";
 import {useToast} from "../../hooks/useToast";
 import {Navigate, Route, Routes} from "react-router-dom";
 import PollutionsTable from "../table/pollutions";
@@ -30,7 +30,12 @@ const Main = () => {
                     title: "Не вдалось завантажити дані.\nПеревірте підключення.",
                     variant: "error"
                 }));
-            setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || []})
+            const pollutantTypes = await fetchPollutantType()
+                .catch(() => setToast({
+                    title: "Не вдалось завантажити дані.\nПеревірте підключення.",
+                    variant: "error"
+                }));
+            setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || [], pollutantTypes: pollutantTypes || []})
         })();
     }, []);
 

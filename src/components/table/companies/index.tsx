@@ -111,7 +111,7 @@ const CompaniesTable: FC = () => {
         try {
             const companies = await fetchCompany();
             const pollutions = await fetchPollution();
-            setData(state => ({companies, pollutants: state.pollutants, pollutions}));
+            setData(state => ({companies, pollutants: state.pollutants, pollutantTypes: state.pollutantTypes, pollutions}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }
@@ -128,7 +128,7 @@ const CompaniesTable: FC = () => {
         try {
             const companies = await fetchCompany();
             const pollutions = await fetchPollution();
-            setData(state => ({companies, pollutants: state.pollutants, pollutions}));
+            setData(state => ({companies, pollutants: state.pollutants, pollutantTypes: state.pollutantTypes, pollutions}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }
