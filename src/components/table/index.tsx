@@ -116,10 +116,11 @@ interface EnhancedTableToolbarProps {
     handleAddRow: () => unknown;
     handleRefresh: () => unknown;
     title: string;
+    filter: string;
     handleFilterChange: ChangeEventHandler<HTMLInputElement>;
 }
 
-function EnhancedTableToolbar({numSelected, handleDelete, handleAddRow, title, handleRefresh, handleFilterChange}: EnhancedTableToolbarProps) {
+function EnhancedTableToolbar({numSelected, handleDelete, handleAddRow, title, handleRefresh, filter, handleFilterChange}: EnhancedTableToolbarProps) {
     return (
         <Toolbar
             sx={{
@@ -158,7 +159,7 @@ function EnhancedTableToolbar({numSelected, handleDelete, handleAddRow, title, h
                 </Tooltip>
             ) : (
                 <>
-                    <TextField label="Фільтр" variant={"standard"} onChange={handleFilterChange}/>
+                    <TextField label="Фільтр" value={filter} variant={"standard"} onChange={handleFilterChange}/>
                     <Tooltip title="Додати поле">
                         <IconButton onClick={handleAddRow}>
                             <Add/>
@@ -363,6 +364,7 @@ function Table<T extends Row>({title, handleRefresh, handleDelete, handleAddRow,
                     handleDelete={() => {handleDelete(selected as number[]); setSelected([])}}
                     handleAddRow={handleOpenAdd}
                     handleRefresh={handleRefresh}
+                    filter={filter}
                     handleFilterChange={handleFilterChange}
                     title={title}
                 />

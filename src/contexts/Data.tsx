@@ -3,12 +3,14 @@ import Pollution from "../models/pollution";
 import Company from "../models/company";
 import Pollutant from "../models/pollutant";
 import PollutantType from "../models/pollutantType";
+import Emergency from "../models/emergency";
 
 export type Data = {
     pollutions: Pollution[],
     companies: Company[],
     pollutants: Pollutant[]
-    pollutantTypes: PollutantType[]
+    pollutantTypes: PollutantType[],
+    emergencies: Emergency[]
 }
 
 const DataContext = createContext<{
@@ -19,7 +21,8 @@ const DataContext = createContext<{
         pollutions: [],
         companies: [],
         pollutants: [],
-        pollutantTypes: []
+        pollutantTypes: [],
+        emergencies: []
     },
     setData: () => {}
 });
@@ -29,7 +32,8 @@ export const DataProvider: FC<{children: ReactNode}> = ({children}) => {
         pollutants: [],
         companies: [],
         pollutions: [],
-        pollutantTypes: []
+        pollutantTypes: [],
+        emergencies: []
     });
 
     return (

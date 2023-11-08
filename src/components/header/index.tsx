@@ -15,7 +15,7 @@ import {SyntheticEvent, useContext, useEffect, useRef, useState} from "react";
 import {
     downloadCompanies,
     downloadPollutants, downloadPollutions,
-    fetchCompany,
+    fetchCompany, fetchEmergency,
     fetchPollutant, fetchPollutantType,
     fetchPollution,
     uploadCsvCompanies,
@@ -27,7 +27,7 @@ import DataContext from "../../contexts/Data";
 import {useToast} from "../../hooks/useToast";
 import {useLocation, useNavigate} from "react-router-dom";
 
-const tabs = ["pollutions", "companies", "pollutants"];
+const tabs = ["pollutions", "companies", "pollutants", "emergencies"];
 
 const Header = () => {
     const [openUpload, setOpenUpload] = useState(false);
@@ -108,7 +108,8 @@ const Header = () => {
                 const pollutants = await fetchPollutant();
                 const companies = await fetchCompany();
                 const pollutantTypes = await fetchPollutantType();
-                setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || [], pollutantTypes: pollutantTypes || []})
+                const emergencies = await fetchEmergency();
+                setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || [], pollutantTypes: pollutantTypes || [], emergencies: emergencies || []})
             } catch (e) {
                 setToast({
                     title: "Не вдалось завантажити дані.\nПеревірте підключення.",
@@ -205,6 +206,7 @@ const Header = () => {
                     <Tab label="Забруднення"/>
                     <Tab label="Компанії"/>
                     <Tab label="Забрудники"/>
+                    <Tab label="Аварії"/>
                 </Tabs>
             </Container>
             {typeof progress !== "undefined" &&

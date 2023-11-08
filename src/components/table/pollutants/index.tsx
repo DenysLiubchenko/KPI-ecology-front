@@ -4,7 +4,7 @@ import DataContext from "../../../contexts/Data";
 import {useToast} from "../../../hooks/useToast";
 import {
     addPollutant,
-    deletePollutant,
+    deletePollutant, fetchEmergency,
     fetchPollutant,
     fetchPollution, updatePollutant
 } from "../../../api";
@@ -206,7 +206,8 @@ const PollutantsTable: FC = () => {
         try {
             const pollutions = await fetchPollution();
             const pollutants = await fetchPollutant();
-            setData(state => ({companies: state.companies, pollutantTypes: state.pollutantTypes, pollutants, pollutions}));
+            const emergencies = await fetchEmergency();
+            setData(state => ({...state, pollutants, pollutions, emergencies}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }
@@ -228,7 +229,7 @@ const PollutantsTable: FC = () => {
         try {
             const pollutions = await fetchPollution();
             const pollutants = await fetchPollutant();
-            setData(state => ({companies: state.companies, pollutantTypes: state.pollutantTypes, pollutants, pollutions}));
+            setData(state => ({...state, pollutants, pollutions}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }

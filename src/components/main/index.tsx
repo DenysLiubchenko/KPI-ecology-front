@@ -2,12 +2,13 @@ import {Container} from "@mui/material";
 import React, {useContext, useEffect} from "react";
 import Table from "../table";
 import DataContext from "../../contexts/Data";
-import {fetchCompany, fetchPollutant, fetchPollutantType, fetchPollution} from "../../api";
+import {fetchCompany, fetchEmergency, fetchPollutant, fetchPollutantType, fetchPollution} from "../../api";
 import {useToast} from "../../hooks/useToast";
 import {Navigate, Route, Routes} from "react-router-dom";
 import PollutionsTable from "../table/pollutions";
 import CompaniesTable from "../table/companies";
 import PollutantsTable from "../table/pollutants";
+import EmergencyTable from "../table/emergency";
 
 const Main = () => {
     const {data, setData} = useContext(DataContext);
@@ -35,7 +36,13 @@ const Main = () => {
                     title: "Не вдалось завантажити дані.\nПеревірте підключення.",
                     variant: "error"
                 }));
-            setData({pollutions: pollutions || [], pollutants: pollutants || [], companies: companies || [], pollutantTypes: pollutantTypes || []})
+            const emergency = await fetchEmergency()
+                .catch(() => setToast({
+                    title: "Не вдалось завантажити дані.\nПеревірте підключення.",
+                    variant: "error"
+                }));
+            setData({pollutions: pollutions || [], pollutants: pollutants || [],
+                companies: companies || [], pollutantTypes: pollutantTypes || [], emergencies: emergency || []})
         })();
     }, []);
 
@@ -46,6 +53,7 @@ const Main = () => {
                 <Route path={"/companies"} element={<CompaniesTable/>}/>
                 <Route path={"/pollutants"} element={<PollutantsTable/>}/>
                 <Route path={"/pollutions"} element={<PollutionsTable/>}/>
+                <Route path={"/emergencies"} element={<EmergencyTable/>}/>
                 <Route path={"/"} element={<PollutionsTable/>}/>
                 <Route path={"*"} element={<Navigate to={"/"}/>}/>
             </Routes>

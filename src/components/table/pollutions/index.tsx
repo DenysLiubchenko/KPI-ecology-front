@@ -3,7 +3,7 @@ import Pollution, {AddPollution} from "../../../models/pollution";
 import {FC, useContext, useMemo} from "react";
 import DataContext from "../../../contexts/Data";
 import {useToast} from "../../../hooks/useToast";
-import {addPollution, deletePollution, fetchPollution, updatePollution} from "../../../api";
+import {addPollution, deletePollution, fetchEmergency, fetchPollution, updatePollution} from "../../../api";
 
 type riskColor = {
     label: string,
@@ -351,7 +351,8 @@ const PollutionsTable: FC = () => {
 
         try {
             const pollutions = await fetchPollution();
-            setData(state => ({...state, pollutions}));
+            const emergencies = await fetchEmergency();
+            setData(state => ({...state, pollutions, emergencies}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }

@@ -3,6 +3,7 @@ import axios, {AxiosProgressEvent, AxiosResponse} from "axios";
 import Pollutant, {AddPollutant, UpdatePollutant} from "./models/pollutant";
 import Company, {AddCompany, UpdateCompany} from "./models/company";
 import PollutantType from "./models/pollutantType";
+import Emergency, {AddEmergency, UpdateEmergency} from "./models/emergency";
 
 export const baseUrl = "http://localhost:8080";
 
@@ -20,6 +21,10 @@ export async function fetchCompany(): Promise<Company[]> {
 
 export async function fetchPollutantType(): Promise<PollutantType[]> {
     return (await axios.get(baseUrl + "/data/get/pollutantType")).data;
+}
+
+export async function fetchEmergency(): Promise<Emergency[]> {
+    return (await axios.get(baseUrl + "/data/get/emergency")).data;
 }
 
 export async function uploadCsvPollutions(file: File, onProgress?: (progress: AxiosProgressEvent) => void): Promise<AxiosResponse<any, any>> {
@@ -61,6 +66,10 @@ export async function deleteCompany(ids: number[]): Promise<AxiosResponse<any, a
     return axios.post(baseUrl + "/data/delete/company", ids);
 }
 
+export async function deleteEmergency(ids: number[]): Promise<AxiosResponse<any, any>> {
+    return axios.post(baseUrl + "/data/delete/emergency", ids);
+}
+
 export async function addPollution(pollution: AddPollution): Promise<Pollution> {
     return axios.post(baseUrl + "/data/upload/pollution", pollution);
 }
@@ -73,6 +82,10 @@ export async function addPollutant(pollutant: AddPollutant): Promise<Pollution> 
     return axios.post(baseUrl + "/data/upload/pollutant", pollutant);
 }
 
+export async function addEmergency(emergency: AddEmergency): Promise<Emergency> {
+    return axios.post(baseUrl + "/data/upload/emergency", emergency);
+}
+
 export async function updatePollutant(pollutant: UpdatePollutant): Promise<AxiosResponse<any, any>> {
     return axios.post(baseUrl + "/data/update/pollutant", pollutant);
 }
@@ -83,6 +96,10 @@ export async function updateCompany(company: UpdateCompany): Promise<AxiosRespon
 
 export async function updatePollution(pollution: UpdatePollution): Promise<AxiosResponse<any, any>> {
     return axios.post(baseUrl + "/data/update/pollution", pollution);
+}
+
+export async function updateEmergency(emergency: UpdateEmergency): Promise<AxiosResponse<any, any>> {
+    return axios.post(baseUrl + "/data/update/emergency", emergency);
 }
 
 function download(url: string): void {

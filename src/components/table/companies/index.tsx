@@ -5,7 +5,7 @@ import {useToast} from "../../../hooks/useToast";
 import {
     addCompany,
     deleteCompany,
-    fetchCompany,
+    fetchCompany, fetchEmergency,
     fetchPollution,
     updateCompany,
 } from "../../../api";
@@ -111,7 +111,8 @@ const CompaniesTable: FC = () => {
         try {
             const companies = await fetchCompany();
             const pollutions = await fetchPollution();
-            setData(state => ({companies, pollutants: state.pollutants, pollutantTypes: state.pollutantTypes, pollutions}));
+            const emergencies = await fetchEmergency();
+            setData(state => ({...state, companies, pollutions, emergencies}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }
@@ -128,7 +129,7 @@ const CompaniesTable: FC = () => {
         try {
             const companies = await fetchCompany();
             const pollutions = await fetchPollution();
-            setData(state => ({companies, pollutants: state.pollutants, pollutantTypes: state.pollutantTypes, pollutions}));
+            setData(state => ({...state, companies, pollutions}));
         } catch {
             setToast({title: "Не вдалось завантажити дані.", variant: "error"});
         }
