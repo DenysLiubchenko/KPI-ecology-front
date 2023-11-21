@@ -81,11 +81,6 @@ const headCells: HeadCell<Row>[] = [
         label: "Забрудник",
     },
     {
-        id: "pollutantTypeName",
-        numeric: false,
-        label: "Тип забруднення"
-    },
-    {
         id: "mfr",
         numeric: true,
         label: "Масові витрати (г/год)",
@@ -189,7 +184,7 @@ function dataToRows(data: Pollution[]): Row[] {
         id: e.id,
         companyName: e.company.companyName,
         location: e.company.location,
-        pollutantName: e.pollutant.pollutantName,
+        pollutantName: `${e.pollutant.pollutantName} (${e.pollutant.pollutantType.pollutantTypeName})`,
         mfr: e.pollutant.mfr,
         tlv: e.pollutant.tlv,
         elv: e.pollutant.elv,
@@ -232,20 +227,22 @@ const PollutionsTable: FC = () => {
             {
                 id: "pollutantName",
                 type: "select",
-                onChange: (field, value, row) => ({
-                    ...row,
-                    pollutantName: value,
-                    mfr: data.pollutants.find(e => e.pollutantName === value)!.mfr,
-                    tlv: data.pollutants.find(e => e.pollutantName === value)!.tlv,
-                    elv: data.pollutants.find(e => e.pollutantName === value)!.elv,
-                    pollutantTypeName: data.pollutants.find(e => e.pollutantName === value)!.pollutantType.pollutantTypeName,
-                }),
-                values: data.pollutants.map(e => ({id: e.id, label: e.pollutantName})),
+                onChange: (field, value, row) => {
+                    const pollutant = data.pollutants.find(e =>
+                        e.pollutantName === row.pollutantName.split(" (")[0] &&
+                        e.pollutantType.pollutantTypeName === row.pollutantName.split(" (")[1].replace(")", "")
+                    )
+                    return {
+                        ...row,
+                        pollutantName: value,
+                        mfr: pollutant!.mfr,
+                        tlv: pollutant!.tlv,
+                        elv: pollutant!.elv,
+                        pollutantTypeName: pollutant!.pollutantType.pollutantTypeName,
+                    }
+                },
+                values: data.pollutants.map(e => ({id: e.id, label: `${e.pollutantName} (${e.pollutantType.pollutantTypeName})`})),
                 required: true
-            },
-            {
-                id: "pollutantTypeName",
-                type: "immutable"
             },
             {
                 id: "mfr",
@@ -317,7 +314,10 @@ const PollutionsTable: FC = () => {
 
     const handleAddPollution = async (newRow: Omit<Row, "id">) => {
         const _newRow: AddPollution = {
-            pollutant: {id: data.pollutants.find(e => e.pollutantName === newRow.pollutantName)!.id},
+            pollutant: {id: data.pollutants.find(e =>
+                    e.pollutantName === newRow.pollutantName.split(" (")[0] &&
+                    e.pollutantType.pollutantTypeName === newRow.pollutantName.split(" (")[1].replace(")", "")
+                )!.id},
             company: {id: data.companies.find(e => e.companyName === newRow.companyName)!.id},
             year: newRow.year,
             pollutionValue: newRow.pollutionValue,
@@ -363,7 +363,10 @@ const PollutionsTable: FC = () => {
             await updatePollution({
                 id: row.id, pollutionValue: row.pollutionValue, year: row.year,
                 company: {id: data.companies.find(c => c.companyName === row.companyName)!.id},
-                pollutant: {id: data.pollutants.find(p => p.pollutantName === row.pollutantName)!.id},
+                pollutant: {id: data.pollutants.find(e =>
+                        e.pollutantName === row.pollutantName.split(" (")[0] &&
+                        e.pollutantType.pollutantTypeName === row.pollutantName.split(" (")[1].replace(")", "")
+                    )!.id},
                 pollutionConcentration: row.pollutionConcentration,
             });
         } catch (e) {

@@ -87,7 +87,7 @@ function dataToRows(data: Emergency[]): Row[] {
     return data.map<Row>(e => ({
         id: e.id,
         companyName: e.company.companyName,
-        pollutantName: e.pollutant.pollutantName,
+        pollutantName: `${e.pollutant.pollutantName} (${e.pollutant.pollutantType.pollutantTypeName})`,
         pollutionConcentration: e.pollutionConcentration,
         pollutionValue: e.pollutionValue,
         peopleMinorInjury: e.peopleMinorInjury,
@@ -127,7 +127,7 @@ const EmergencyTable = () => {
                         ...row,
                         pollutantName: value,
                     }),
-                    values: data.pollutants.map(e => ({id: e.id, label: e.pollutantName})),
+                    values: data.pollutants.map(e => ({id: e.id, label: `${e.pollutantName} (${e.pollutantType.pollutantTypeName})`})),
                 },
                 {
                     id: "pollutionValue",
@@ -206,7 +206,10 @@ const EmergencyTable = () => {
     const handleAddEmergency = async (emergency: Omit<Row, "id">) => {
         const {companyName: _, pollutantName: __, ..._emergency} = {
             ...emergency,
-            pollutant: {id: data.pollutants.find(e => e.pollutantName === emergency.pollutantName)!.id},
+            pollutant: {id: data.pollutants.find(e =>
+                    e.pollutantName === emergency.pollutantName.split(" (")[0] &&
+                    e.pollutantType.pollutantTypeName === emergency.pollutantName.split(" (")[1].replace(")", "")
+                )!.id},
             company: {id: data.companies.find(e => e.companyName === emergency.companyName)!.id},
         };
 
@@ -246,7 +249,10 @@ const EmergencyTable = () => {
     const handleUpdateEmergency = async (emergency: Row) => {
         const {companyName: _, pollutantName: __, ..._emergency} = {
             ...emergency,
-            pollutant: {id: data.pollutants.find(e => e.pollutantName === emergency.pollutantName)!.id},
+            pollutant: {id: data.pollutants.find(e =>
+                    e.pollutantName === emergency.pollutantName.split(" (")[0] &&
+                    e.pollutantType.pollutantTypeName === emergency.pollutantName.split(" (")[1].replace(")", "")
+                )!.id},
             company: {id: data.companies.find(e => e.companyName === emergency.companyName)!.id},
         };
 
