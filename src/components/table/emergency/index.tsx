@@ -35,22 +35,22 @@ const headCells: HeadCell<Row>[] = [
     {
         id: "peopleMinorInjury",
         numeric: true,
-        label: "🤕",
+        label: "Легкі травми",
     },
     {
         id: "peopleSeriousInjury",
         numeric: true,
-        label: "🚑",
+        label: "Тяжкі травми",
     },
     {
         id: "peopleDisability",
         numeric: true,
-        label: "👩‍🦽",
+        label: "Інваліди",
     },
     {
         id: "peopleDead",
         numeric: true,
-        label: "💀",
+        label: "Загиблі",
     },
     {
         id: "pollutionLoss",
